@@ -2,65 +2,69 @@ package com.wmq.wspen.Sevices;
 
 import android.accessibilityservice.AccessibilityGestureEvent;
 import android.accessibilityservice.AccessibilityService;
-import android.accessibilityservice.AccessibilityServiceInfo;
-import android.app.ActivityManager;
+import android.annotation.SuppressLint;
 import android.app.Service;
-import android.content.ComponentName;
-import android.content.Context;
 import android.content.Intent;
-import android.content.res.Configuration;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.IInterface;
+import android.os.Message;
+import android.os.Messenger;
+import android.os.Parcel;
+import android.os.RemoteException;
 import android.util.Log;
 import android.view.KeyEvent;
-import android.view.WindowManager;
 import android.view.accessibility.AccessibilityEvent;
-import android.widget.Button;
-import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.samsung.android.sdk.penremote.ButtonEvent;
-import com.samsung.android.sdk.penremote.SpenEvent;
-import com.samsung.android.sdk.penremote.SpenEventListener;
-import com.samsung.android.sdk.penremote.SpenRemote;
-import com.samsung.android.sdk.penremote.SpenUnit;
-import com.samsung.android.sdk.penremote.SpenUnitManager;
+import com.wmq.wspen.CameraSurfaceView;
 
-public  class  CameraService extends AccessibilityService
-{
+import java.io.FileDescriptor;
+
+public class CameraService extends Service {
     protected static final String TAG = "tangtangAccessibilityService";
+    private CameraSurfaceView surfaceView;
+    private static boolean mIsRun;
+    private CameraBinder mBinder;
+
+    public static boolean ismIsRun() {
+        return mIsRun;
+    }
+
+    @SuppressLint("Range")
     @Override
-    protected boolean onKeyEvent(KeyEvent event) {
-        Log.d(TAG, "onKeyEvent " + event);
-//        Toast.makeText(getApplicationContext(), "onKeyEvent " + event, Toast.LENGTH_LONG);
-        return super.onKeyEvent(event);
+    public void onCreate() {
+        super.onCreate();
+        mIsRun = true;
+        mBinder = new CameraBinder(messenger);
+    }
+
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        mIsRun = false;
     }
 
     @Override
-    public void onSystemActionsChanged() {
-        super.onSystemActionsChanged();
+    public IBinder onBind(Intent intent) {
+        return mBinder;
     }
 
-    @Override
-    public boolean onGesture(@NonNull AccessibilityGestureEvent gestureEvent) {
-        System.out.println("KEYCODE_gestureEvent" + gestureEvent.toString());
-        return super.onGesture(gestureEvent);
-    }
+    private Messenger messenger = new Messenger(new Handler() {
 
-    @Override
-    public void onAccessibilityEvent(AccessibilityEvent event) {
-        if(event.getPackageName().equals("com.samsung.android.service.aircommand"))
-        {
-            Log.d(TAG, "KEYCODE_onAccessibilityEvent" + event.toString());
-            System.out.println("KEYCODE_onAccessibilityEvent" + event.toString());
-//            Toast.makeText(getApplicationContext(), "onKeyEvent " + event, Toast.LENGTH_LONG);
+        @Override
+        public void handleMessage(@NonNull Message msg) {
+            super.handleMessage(msg);
+            switch (msg.what) {
+                case ConstParams.CameraPhotos: {
+                    new CameraSurfaceView(getApplicationContext()).OpenCamera(true);
+                }
+                break;
+            }
         }
-    }
-
-    @Override
-    public void onInterrupt() {
-
-    }
+    });
 }
+
